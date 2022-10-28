@@ -127,7 +127,87 @@ void NiXnetSession::WriteSignalSinglePoint(cli::array<double>^ _values)
    }
 }
 
+cli::array<cli::array<u8>^>^ NiXnetSession::ReadFrame(u32 bufferSize, f64 timeout)
+{
+    cli::array<cli::array<u8>^>^ rawFrames = nullptr;
+    u8* buffer = new u8[bufferSize];
+
+    try
+    {
+        u32 numOfReadFrames;
+        NiXnet::CheckStatus(nxReadFrame(m_handle, buffer, bufferSize, timeout, &numOfReadFrames));
+
+        rawFrames = gcnew cli::array<cli::array<u8>^>(numOfReadFrames);
+        i32 index = 0, frameSize, payloadLength;
+
+        for (u32 i = 0; i < numOfReadFrames; i++)
+        {
+            payloadLength = buffer[index + 15];
+
+            // Calculate the frame size according to the RAW frame format (NI)
+            frameSize = 24;
+            if (payloadLength > 8)
+            {
+                frameSize = frameSize + (payloadLength - 1) & 0xFFF8;
+            }
+
+            rawFrames[i] = CreateRawFrameDataManagedArray(buffer, index, frameSize);
+            index += frameSize;
+        }
+    }
+    finally
+    {
+        delete[] buffer;
+    }
+
+    return rawFrames;
+}
+
+void NiXnetSession::WriteFrame(cli::array<cli::array<u8>^>^ frames, f64 timeout)
+{
+    u8* buffer = nullptr;
+
+    try
+    {
+        u32 bufferSize = 0;
+        for (int i = 0; i < frames->Length; i++)
+        {
+            bufferSize += frames[i]->Length;
+        }
+
+        // Create and fill the send buffer
+        buffer = new u8[bufferSize];
+        i32 index = 0;
+
+        for (int i = 0; i < frames->Length; i++)
+        {
+            for (int j = 0; j < frames[i]->Length; j++)
+            {
+                buffer[index++] = frames[i][j];
+            }
+        }
+
+        NiXnet::CheckStatus(nxWriteFrame(m_handle, buffer, bufferSize, timeout));
+    }
+    finally
+    {
+        delete[] buffer;
+    }
+}
+
 NiXnetSession::~NiXnetSession()
 {
    NiXnet::CheckStatus(nxClear(m_handle));
+}
+
+cli::array<u8>^ NiXnetSession::CreateRawFrameDataManagedArray(
+    u8* buffer, int sourceIndex, int length)
+{
+    cli::array<u8>^ frameDataManaged = gcnew cli::array<u8>(length);
+    for (int i = sourceIndex, j = 0; j < length; i++, j++)
+    {
+        frameDataManaged[j] = buffer[i];
+    }
+
+    return frameDataManaged;
 }

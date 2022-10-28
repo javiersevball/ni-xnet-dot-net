@@ -252,6 +252,7 @@ namespace NiXnetDotNet {
    {
    private:
       nxSessionRef_t m_handle;
+      cli::array<u8>^ CreateRawFrameDataManagedArray(u8* buffer, int sourceIndex, int length);
 
    public:
       NiXnetSession(NetString _filenameOrAlias, NetString _clusterName, cli::array<NetString>^ _list, NetString _interface, NiXnetMode _mode);
@@ -267,7 +268,8 @@ namespace NiXnetDotNet {
       property u32 LinScheduleIndex { void set(u32); }
       cli::array<System::Tuple<double, DateTime>^>^ ReadSignalSinglePoint();
       void WriteSignalSinglePoint(cli::array<double>^ _values);
-
+      cli::array<cli::array<u8>^>^ ReadFrame(u32 bufferSize, f64 timeout);
+      void WriteFrame(cli::array<cli::array<u8>^>^ frames, f64 timeout);
       ~NiXnetSession();
    };
 }
