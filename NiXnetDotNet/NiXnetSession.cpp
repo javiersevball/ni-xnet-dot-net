@@ -129,18 +129,18 @@ void NiXnetSession::WriteSignalSinglePoint(cli::array<double>^ _values)
 
 cli::array<cli::array<u8>^>^ NiXnetSession::ReadFrame(u32 bufferSize, f64 timeout)
 {
-    cli::array<cli::array<u8>^>^ rawFrames = nullptr;
     u8* buffer = new u8[bufferSize];
+    System::Collections::Generic::List<cli::array<u8>^>^ rawFrames =
+        gcnew System::Collections::Generic::List<cli::array<u8>^>();
 
     try
     {
-        u32 numOfReadFrames;
-        NiXnet::CheckStatus(nxReadFrame(m_handle, buffer, bufferSize, timeout, &numOfReadFrames));
+        u32 numOfReadBytes;
+        NiXnet::CheckStatus(nxReadFrame(m_handle, buffer, bufferSize, timeout, &numOfReadBytes));
 
-        rawFrames = gcnew cli::array<cli::array<u8>^>(numOfReadFrames);
-        i32 index = 0, frameSize, payloadLength;
+        u32 index = 0, frameSize, payloadLength;
 
-        for (u32 i = 0; i < numOfReadFrames; i++)
+        while (index < numOfReadBytes)
         {
             payloadLength = buffer[index + 15];
 
@@ -151,7 +151,7 @@ cli::array<cli::array<u8>^>^ NiXnetSession::ReadFrame(u32 bufferSize, f64 timeou
                 frameSize = frameSize + (payloadLength - 1) & 0xFFF8;
             }
 
-            rawFrames[i] = CreateRawFrameDataManagedArray(buffer, index, frameSize);
+            rawFrames->Add(CreateRawFrameDataManagedArray(buffer, index, frameSize));
             index += frameSize;
         }
     }
@@ -160,7 +160,7 @@ cli::array<cli::array<u8>^>^ NiXnetSession::ReadFrame(u32 bufferSize, f64 timeou
         delete[] buffer;
     }
 
-    return rawFrames;
+    return rawFrames->ToArray();
 }
 
 void NiXnetSession::WriteFrame(cli::array<cli::array<u8>^>^ frames, f64 timeout)
@@ -201,10 +201,10 @@ NiXnetSession::~NiXnetSession()
 }
 
 cli::array<u8>^ NiXnetSession::CreateRawFrameDataManagedArray(
-    u8* buffer, int sourceIndex, int length)
+    u8* buffer, u32 sourceIndex, u32 length)
 {
     cli::array<u8>^ frameDataManaged = gcnew cli::array<u8>(length);
-    for (int i = sourceIndex, j = 0; j < length; i++, j++)
+    for (u32 i = sourceIndex, j = 0; j < length; i++, j++)
     {
         frameDataManaged[j] = buffer[i];
     }

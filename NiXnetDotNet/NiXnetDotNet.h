@@ -252,7 +252,7 @@ namespace NiXnetDotNet {
    {
    private:
       nxSessionRef_t m_handle;
-      cli::array<u8>^ CreateRawFrameDataManagedArray(u8* buffer, int sourceIndex, int length);
+      cli::array<u8>^ CreateRawFrameDataManagedArray(u8* buffer, u32 sourceIndex, u32 length);
 
    public:
       NiXnetSession(NetString _filenameOrAlias, NetString _clusterName, cli::array<NetString>^ _list, NetString _interface, NiXnetMode _mode);
