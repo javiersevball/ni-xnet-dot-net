@@ -270,6 +270,8 @@ namespace NiXnetDotNet {
       void WriteSignalSinglePoint(cli::array<double>^ _values);
       cli::array<cli::array<u8>^>^ ReadFrame(u32 bufferSize, f64 timeout);
       void WriteFrame(cli::array<cli::array<u8>^>^ frames, f64 timeout);
+      void ConfigureCanTermination(bool enable);
+
       ~NiXnetSession();
    };
 }

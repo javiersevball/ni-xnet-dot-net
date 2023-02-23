@@ -195,6 +195,14 @@ void NiXnetSession::WriteFrame(cli::array<cli::array<u8>^>^ frames, f64 timeout)
     }
 }
 
+void NiXnetSession::ConfigureCanTermination(bool enable)
+{
+    NiXnet::SetValue(
+        m_handle,
+        nxPropSession_IntfCANTerm,
+        Convert::ToUInt32(enable));
+}
+
 NiXnetSession::~NiXnetSession()
 {
    NiXnet::CheckStatus(nxClear(m_handle));
